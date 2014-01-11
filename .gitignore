@@ -3,4 +3,3 @@
 *.log
 *.orig
 /node_modules/
-/bower_components/
