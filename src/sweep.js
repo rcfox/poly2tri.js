@@ -44,6 +44,9 @@ var utils = require('./utils');
 var EPSILON = utils.EPSILON;
 
 /** @const */
+var WEAKMAP_AVAILABLE = (typeof WeakMap !== 'undefined');
+
+/** @const */
 var Orientation = utils.Orientation;
 /** @const */
 var orient2d = utils.orient2d;
@@ -79,7 +82,12 @@ function sweepPoints(tcx) {
     for (i = 1; i < len; ++i) {
         var point = tcx.getPoint(i);
         var node = pointEvent(tcx, point);
-        var edges = point._p2t_edge_list;
+        var edges;
+        if (WEAKMAP_AVAILABLE) {
+            edges = tcx.edge_list_for_point.get(point);
+        } else {
+            edges = point._p2t_edge_list;
+        }
         for (var j = 0; edges && j < edges.length; ++j) {
             edgeEventByEdge(tcx, edges[j], node);
         }

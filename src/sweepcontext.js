@@ -41,6 +41,9 @@ var Node = AdvancingFront.Node;
  */
 var kAlpha = 0.3;
 
+/** @const */
+var WEAKMAP_AVAILABLE = (typeof WeakMap !== 'undefined');
+
 
 // -------------------------------------------------------------------------Edge
 /**
@@ -67,11 +70,6 @@ var Edge = function(p1, p2) {
             throw new PointError('poly2tri Invalid Edge constructor: repeated points!', [p1]);
         }
     }
-
-    if (!this.q._p2t_edge_list) {
-        this.q._p2t_edge_list = [];
-    }
-    this.q._p2t_edge_list.push(this);
 };
 
 
@@ -153,6 +151,11 @@ var SweepContext = function(contour, options) {
     this.map_ = [];
     this.points_ = (options.cloneArrays ? contour.slice(0) : contour);
     this.edge_list = [];
+
+    if (WEAKMAP_AVAILABLE) {
+        /* global WeakMap */
+        this.edge_list_for_point = new WeakMap();
+    }
 
     // Bounding box of all points. Computed at the start of the triangulation, 
     // it is stored in case it is needed by the caller.
@@ -443,7 +446,20 @@ SweepContext.prototype.initTriangulation = function() {
 SweepContext.prototype.initEdges = function(polyline) {
     var i, len = polyline.length;
     for (i = 0; i < len; ++i) {
-        this.edge_list.push(new Edge(polyline[i], polyline[(i + 1) % len]));
+        var edge = new Edge(polyline[i], polyline[(i + 1) % len]);
+        this.edge_list.push(edge);
+
+        if (WEAKMAP_AVAILABLE) {
+            if (!this.edge_list_for_point.has(edge.q)) {
+                this.edge_list_for_point.set(edge.q, []);
+            }
+            this.edge_list_for_point.get(edge.q).push(edge);
+        } else {
+            if (!edge.q._p2t_edge_list) {
+                edge.q._p2t_edge_list = [];
+            }
+            edge.q._p2t_edge_list.push(edge);
+        }
     }
 };
 
