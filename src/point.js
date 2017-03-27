@@ -23,9 +23,6 @@
 
 var xy = require('./xy');
 
-/** @const */
-var WEAKMAP_AVAILABLE = (typeof WeakMap !== 'undefined');
-
 // ------------------------------------------------------------------------Point
 /**
  * Construct a point
@@ -49,20 +46,15 @@ var Point = function(x, y) {
      */
     this.y = +y || 0;
 
-    if (!WEAKMAP_AVAILABLE ) {
-        // Extra fields will be weakly mapped to Point objects if WeakMap is available.
-        // Otherwise, these fields will be added directly to the class.
+    // All extra fields added to Point are prefixed with _p2t_
+    // to avoid collisions if custom Point class is used.
 
-        // All extra fields added to Point are prefixed with _p2t_
-        // to avoid collisions if custom Point class is used.
-
-        /**
-         * The edges this point constitutes an upper ending point
-         * @private
-         * @type {Array.<Edge>}
-         */
-        this._p2t_edge_list = null;
-    }
+    /**
+     * The edges this point constitutes an upper ending point
+     * @private
+     * @type {Array.<Edge>}
+     */
+    this._p2t_edge_list = null;
 };
 
 /**
