@@ -41,10 +41,6 @@ var Node = AdvancingFront.Node;
  */
 var kAlpha = 0.3;
 
-/** @const */
-var WEAKMAP_AVAILABLE = (typeof WeakMap !== 'undefined');
-
-
 // -------------------------------------------------------------------------Edge
 /**
  * Represents a simple polygon's edge
@@ -167,7 +163,7 @@ var SweepContext = function(contour, options) {
     this.edge_list_for_point_ = null;
 
     if (options.immutablePointClass) {
-        if (!WEAKMAP_AVAILABLE) {
+        if (typeof WeakMap === 'undefined') {
             throw new Error('poly2tri Unsupported Javascript feature: Can not work with immutable points if WeakMap is not supported.');
         }
 
