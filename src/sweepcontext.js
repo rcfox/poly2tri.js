@@ -121,6 +121,11 @@ var EdgeEvent = function() {
  *                  (contour, holes). Points inside arrays are never copied.
  *                  Default is <code>false</code> : keep a reference to the array arguments,
  *                  who will be modified in place.
+ * @property {boolean=} immutablePointClass - if <code>true</code>, extra fields will not be added
+ *                  to custom Point classes. This can be useful for the garbage collector and class
+ *                  optimizations. However it currently results in reduced poly2tri performance.
+ *                  If WeakMap is not supported by your Javascript environment, this option is not available.
+ *                  Default is <code>false</code> : allow Point class modifications, prefixed with _p2t_
  */
 /**
  * Constructor for the triangulation context.
@@ -144,6 +149,7 @@ var EdgeEvent = function() {
  * @param {Array.<XY>} contour - array of point objects. The points can be either {@linkcode Point} instances,
  *          or any "Point like" custom class with <code>{x, y}</code> attributes.
  * @param {SweepContextOptions=} options - constructor options
+ * @throw {Error} if WeakMap is not supported and the user requested that we don't modify their Point class.
  */
 var SweepContext = function(contour, options) {
     options = options || {};
@@ -152,7 +158,13 @@ var SweepContext = function(contour, options) {
     this.points_ = (options.cloneArrays ? contour.slice(0) : contour);
     this.edge_list = [];
 
-    if (WEAKMAP_AVAILABLE) {
+    this.edge_list_for_point = null;
+
+    if (options.immutablePointClass) {
+        if (!WEAKMAP_AVAILABLE) {
+            throw new Error('poly2tri Unsupported Javascript feature: Can not work with immutable points if WeakMap is not supported.');
+        }
+
         /* global WeakMap */
         this.edge_list_for_point = new WeakMap();
     }
@@ -449,7 +461,7 @@ SweepContext.prototype.initEdges = function(polyline) {
         var edge = new Edge(polyline[i], polyline[(i + 1) % len]);
         this.edge_list.push(edge);
 
-        if (WEAKMAP_AVAILABLE) {
+        if (this.edge_list_for_point !== null) {
             if (!this.edge_list_for_point.has(edge.q)) {
                 this.edge_list_for_point.set(edge.q, []);
             }
@@ -465,7 +477,7 @@ SweepContext.prototype.initEdges = function(polyline) {
 
 /** @private */
 SweepContext.prototype.getEdgeList = function(point) {
-    if (WEAKMAP_AVAILABLE) {
+    if (this.edge_list_for_point !== null) {
         return this.edge_list_for_point.get(point);
     } else {
         return point._p2t_edge_list;
