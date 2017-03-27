@@ -35,7 +35,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* global jasmine, describe, it, expect, beforeEach */
+/* global jasmine, describe, it, expect, pending, beforeEach */
 
 "use strict";
 
@@ -256,6 +256,30 @@ describe("poly2tri", function() {
                     var swctx = new p2t.SweepContext(contour, options);
                     swctx.triangulate();
                 }).toThrowError(TypeError);
+            });
+            it("should not fail on frozen points when immutablePointClass option is used", function() {
+                if (typeof WeakMap === 'undefined') {
+                    pending('test can not run without WeakMap support');
+                }
+                contour = contour.map(function (value) {
+                    return Object.freeze(value);
+                });
+                var swctx = new p2t.SweepContext(contour, {immutablePointClass: true});
+                var result = swctx.triangulate();
+                expect(result).toBeDefined();
+            });
+            it("should fail if immutablePointClass is used but WeakMap is not supported", function() {
+                // Force WeakMap to be undefined for this test.
+                /* global global */
+                var origWeakMap = global.WeakMap;
+                global.WeakMap = undefined;
+
+                expect(function() {
+                    var swctx = new p2t.SweepContext(contour, {immutablePointClass: true});
+                    swctx.triangulate();
+                }).toThrowError(/poly2tri Unsupported Javascript feature/);
+
+                global.WeakMap = origWeakMap;
             });
         });
         describe("a square", function() {
