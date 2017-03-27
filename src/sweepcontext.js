@@ -158,7 +158,13 @@ var SweepContext = function(contour, options) {
     this.points_ = (options.cloneArrays ? contour.slice(0) : contour);
     this.edge_list = [];
 
-    this.edge_list_for_point = null;
+    /**
+     * The edge list associated with each point. Only used if options.immutablePointClass is true.
+     * Mirrors the usage of _p2t_edge_list on the Point class, but has the same lifetime as the context.
+     * @private
+     * @type {WeakMap} - {Point : Array.<Edge>}
+     */
+    this.edge_list_for_point_ = null;
 
     if (options.immutablePointClass) {
         if (!WEAKMAP_AVAILABLE) {
@@ -166,7 +172,7 @@ var SweepContext = function(contour, options) {
         }
 
         /* global WeakMap */
-        this.edge_list_for_point = new WeakMap();
+        this.edge_list_for_point_ = new WeakMap();
     }
 
     // Bounding box of all points. Computed at the start of the triangulation, 
@@ -461,11 +467,11 @@ SweepContext.prototype.initEdges = function(polyline) {
         var edge = new Edge(polyline[i], polyline[(i + 1) % len]);
         this.edge_list.push(edge);
 
-        if (this.edge_list_for_point !== null) {
-            if (!this.edge_list_for_point.has(edge.q)) {
-                this.edge_list_for_point.set(edge.q, []);
+        if (this.edge_list_for_point_ !== null) {
+            if (!this.edge_list_for_point_.has(edge.q)) {
+                this.edge_list_for_point_.set(edge.q, []);
             }
-            this.edge_list_for_point.get(edge.q).push(edge);
+            this.edge_list_for_point_.get(edge.q).push(edge);
         } else {
             if (!edge.q._p2t_edge_list) {
                 edge.q._p2t_edge_list = [];
@@ -477,8 +483,8 @@ SweepContext.prototype.initEdges = function(polyline) {
 
 /** @private */
 SweepContext.prototype.getEdgeList = function(point) {
-    if (this.edge_list_for_point !== null) {
-        return this.edge_list_for_point.get(point);
+    if (this.edge_list_for_point_ !== null) {
+        return this.edge_list_for_point_.get(point);
     } else {
         return point._p2t_edge_list;
     }
