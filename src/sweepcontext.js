@@ -464,6 +464,15 @@ SweepContext.prototype.initEdges = function(polyline) {
 };
 
 /** @private */
+SweepContext.prototype.getEdgeList = function(point) {
+    if (WEAKMAP_AVAILABLE) {
+        return this.edge_list_for_point.get(point);
+    } else {
+        return point._p2t_edge_list;
+    }
+};
+
+/** @private */
 SweepContext.prototype.getPoint = function(index) {
     return this.points_[index];
 };
